@@ -1,0 +1,155 @@
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(foreign)
+library(plm)
+library(sandwich)
+library(lmtest)
+library(dplyr)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+
+
+
+
+a3=read.csv("/Users/pimmy/Desktop/project_econo/final.csv")
+a2=read.csv('/Users/pimmy/Desktop/project_econo/suicite_rate_allyr.csv')
+
+
+lm_mod=plm(suicide.r~
+             u_rate+be_max.ad+u_rate:be_max.ad+log(salary),
+           data=a3,index=c("state_id", "year"), model="within")
+
+summary_update=summary(lm_mod)
+summary_update
+summary_update$coefficients[, 2] = sqrt(diag(vcovHC(lm_mod)))
+summary_update
+
+coeftest(lm_mod, vcov.=vcovNW)
+
+re = plm(suicide.r ~ 
+            u_rate+benefit_max+u_rate:benefit_max+
+            log(salary), data=a3, index=c("state_id", "year"), model = "random")
+
+phtest(lm_mod, re)
+
+summary_update=summary(lm_mod)
+summary_update$coefficients[, 2] = sqrt(diag(vcovHC(lm_mod)))
+summary_update
+
+```
+```{r}
+
+attacht(a2)
+hist(a2$suicide.r)
+
+national_death=a2 %>%
+  group_by(Year) %>%
+  summarise(sum(Deaths)/sum(Population))
+
+dd=data.frame(year=national_death$Year,death=national_death$`sum(Deaths)/sum(Population)`*1000000)
+
+ggplot(dd,aes(x=year,y=death))+
+  geom_line(color="red")+ ggtitle("Suicide Death Roll Per Million")
+
+
+a3_new=filter(a3,year==1999)
+a4=a3_new %>%
+  group_by(state) %>%
+  select(u_rate,benefit_max) %>%
+  filter(benefit_max<10000)
+a4=as.data.frame(a4)
+ggplot(a4,aes(x=state,y=benefit_max))+
+  geom_bar(stat = 'identity')+ ggtitle("Suicide Death Roll Per Million")
+
+
+a5=a3 %>%
+  select(year,state,benefit_max) %>%
+  filter(year<2007) 
+
+par(mfrow=c(1,2))
+ggplot(a5,mapping=aes(x=factor(year),y=benefit_max))+
+  geom_boxplot(outlier.colour="green",color="black",fill="red")+
+  ggtitle("Maximum Benefit for 1999-2006")+
+  xlab("year")
+a3 %>%
+  select(year,state,benefit_max) %>%
+  filter(year>2007) %>%
+  ggplot(a5,mapping=aes(x=factor(year),y=benefit_max))+
+  geom_boxplot(outlier.colour="green",color="black",fill="red")+
+  ggtitle("Maximum Benefit for 2007-2016")+
+  xlab("year")
+
+```
+  
+  
+```{r}
+
+
+a3_new=filter(a3,year==1999)
+a4=a3_new %>%
+  group_by(state) %>%
+  select(u_rate,benefit_max) %>%
+  filter(benefit_max<10000)
+a4=as.data.frame(a4)
+ggplot(a4,aes(x=state,y=benefit_max))+
+  geom_bar(stat = 'identity')+ ggtitle("Suicide Death Roll Per Million")
+
+
+a5=a3 %>%
+  select(year,state,benefit_max) %>%
+  filter(year<2007) 
+
+p1=ggplot(a5,mapping=aes(x=factor(year),y=benefit_max))+
+  geom_boxplot(outlier.colour="green",color="black",fill="red")+
+  ggtitle("Maximum Benefit for 1999-2006")+
+  xlab("year")
+p2=a3 %>%
+  select(year,state,benefit_max) %>%
+  filter(year>=2007) %>%
+  ggplot(a5,mapping=aes(x=factor(year),y=benefit_max))+
+  geom_boxplot(outlier.colour="green",color="black",fill="red")+
+  ggtitle("Maximum Benefit for 2007-2016")+
+  xlab("year")
+
+
+p3=a3 %>%
+  select(year,state,u_rate) %>%
+  filter(year<2007) %>%
+  ggplot(a5,mapping=aes(x=factor(year),y=u_rate))+
+  geom_boxplot(outlier.colour="green",color="black",fill="dodgerblue")+
+  ggtitle("Unemployment rate for 1999-2006")+
+  xlab("year")
+
+
+p4=a3 %>%
+  select(year,state,u_rate) %>%
+  filter(year>=2007) %>%
+  ggplot(a5,mapping=aes(x=factor(year),y=u_rate))+
+  geom_boxplot(outlier.colour="green",color="black",fill="dodgerblue")+
+  ggtitle("Unemployment rate for 2007-2016")+
+  xlab("year")
+
+p5= a3 %>%
+  select(year,state,suicide.r) %>%
+  filter(year<2007) %>%
+  ggplot(a5,mapping=aes(x=factor(year),y=suicide.r))+
+  geom_boxplot(outlier.colour="green",color="black",fill="orange")+
+  ggtitle("Suicide rate for 1999-2006")+
+  xlab("year")
+
+p6= a3 %>%
+  select(year,state,suicide.r) %>%
+  filter(year>=2007) %>%
+  ggplot(a5,mapping=aes(x=factor(year),y=suicide.r))+
+  geom_boxplot(outlier.colour="green",color="black",fill="orange")+
+  ggtitle("Suicide rate for 2007-2016")+
+  xlab("year")
+grid.arrange(p1, p2,p3,p4,p5,p6,nrow = 3,ncol=2)
+```
+  
