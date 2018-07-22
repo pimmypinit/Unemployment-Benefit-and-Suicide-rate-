@@ -1,3 +1,2 @@
-# Unemployment-Benefit-and-Suicide-rate-
+# Unemployment Benefit and Suicide Rate Project Proposal
 
-## Contents of the code can be found here
